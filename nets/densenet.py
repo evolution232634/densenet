@@ -63,6 +63,44 @@ def densenet(images, num_classes=1001, is_training=False,
             pass
             ##########################
             # Put your code here.
+            #Feature Block
+            net = slim.conv2d(images, 2 * growth, [7, 7], stride=2, scope='feature_conv')
+            net = slim.max_pool2d(net, [3, 3], stride=2, padding='SAME', scope='feature_pool')
+
+            #Dense Block-1
+            net = block(net, 6, growth, scope='block_1')
+
+            #Transition Block-1
+            net = bn_act_conv_drp(net, growth, [1, 1], scope='transition1_conv')
+            net = slim.avg_pool2d(net, [2, 2], stride=2, scope='transition1_pool')
+
+            # Dense Block-2
+            net = block(net, 12, growth, scope='block_2')
+
+            # Transition Block-2
+            net = bn_act_conv_drp(net, growth, [1, 1], scope='transition2_conv')
+            net = slim.avg_pool2d(net, [2, 2], stride=2, scope='transition2_pool')
+
+            # Dense Block-3
+            net = block(net, 24, growth, scope='block_3')
+
+            # Transition Block-3
+            net = bn_act_conv_drp(net, growth, [1, 1], scope='transition3_conv')
+            net = slim.avg_pool2d(net, [2, 2], stride=2, scope='transition3_pool')
+
+            # Dense Block-4
+            net = block(net, 16, growth, scope='block_4')
+
+            # ClassificationBlock
+            net = slim.batch_norm(net, scope='last_batch_norm')
+            net = tf.nn.relu(net)
+
+            net = slim.avg_pool2d(net, [7, 7], scope='global_pool')
+            net = slim.flatten(net, scope='flatten')
+            logits = end_points['logits'] = slim.fully_connected(net, num_classes, activation_fn=None,
+                                                                 scope='logits')
+
+            end_points['predictions'] = tf.nn.softmax(logits, name='predictions')
             ##########################
 
     return logits, end_points
